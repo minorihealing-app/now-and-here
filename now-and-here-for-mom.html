@@ -465,14 +465,20 @@ function calcScores() {
   return { a, b, c, d, val };
 }
 
-function getState(val) {
+function getState(scores) {
+  const { val, d } = scores;
+  if (d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
   if (val > 4)   return { name: 'やや高め', color: 'var(--color-high-1)', level: 1 };
   if (val >= -1) return { name: '今ここ',   color: 'var(--color-neutral)', level: 0 };
   return               { name: 'やや低め', color: 'var(--color-low-2)',   level: -1 };
 }
 
 function getDesc(level) {
-  if (level === 0)  return {
+  if (level === 99) return {
+    main: 'いるようでいないかも',
+    sub: '自動的にこなしているかも\n注意して様子を見ましょう'
+  };
+  if (level === 0) return {
     main: '今ここにいます',
     sub: 'このまま見守りましょう'
   };
@@ -591,7 +597,7 @@ function submitCheck() {
 }
 
 function renderResult(scores, already) {
-  const s = getState(scores.val);
+  const s = getState(scores);
   const desc = getDesc(s.level);
   const area = document.getElementById('resultBody');
 
@@ -599,7 +605,7 @@ function renderResult(scores, already) {
     ? desc.sub.split('\n').map(l => `<span>${l}</span>`).join('<br>')
     : '';
 
-  const subLabel = s.level !== 0
+  const subLabel = (s.level !== 0 && s.level !== 99)
     ? `<div class="result-sublabel">${s.name}</div>`
     : '<div style="height:28px"></div>';
 
@@ -702,7 +708,7 @@ function renderGraph() {
   }).join('');
 
   const dots = recent.map((e, i) => {
-    const s = getState(e.val);
+    const s = getState(e);
     return `<circle cx="${xs[i]}" cy="${ys[i]}" r="4.5" fill="${s.color}" stroke="white" stroke-width="1.5"/>`;
   }).join('');
 
@@ -733,7 +739,7 @@ function renderGraph() {
   `).join('');
 
   const rows = history.slice(-10).reverse().map(e => {
-    const s = getState(e.val);
+    const s = getState(e);
     return `
       <div class="history-row">
         <div class="history-orb" style="background:${s.color}"></div>
