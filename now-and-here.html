@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>now&here</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+:root {
+  --white: #ffffff;
+  --bg: #f8f8f6;
+  --ink: #000000;
+  --ink-mid: #333333;
+  --ink-light: #888888;
+  --border: #d8d8d4;
+  --border-light: #ebebeb;
+
+  /* 覚醒カラー */
+  --color-low-3:  #2a3f5c;
+  --color-low-2:  #4a6880;
+  --color-low-1:  #7a9db8;
+  --color-neutral:#6bbf9e;
+  --color-high-1: #e8855a;
+  --color-high-2: #f0a882;
+  --color-high-3: #f5d0b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ── */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.header {
+  padding: 48px 32px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+.header-app {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.header-amp {
+  font-weight: 200;
+  color: var(--ink-light);
+}
+.header-sub {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.header-date {
+  font-size: 12px;
+  color: var(--ink-mid);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+}
+.tab {
+  padding: 14px 0;
+  margin-right: 28px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink-light);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+.tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ── Panel ── */
+.panel { display: none; flex: 1; }
+.panel.active { display: block; }
+
+/* ── Today orb（非表示） ── */
+.orb-section { display: none; }
+.orb { display: none; }
+.orb-label { display: none; }
+
+/* ── Intro ── */
+.intro {
+  padding: 24px 32px;
+  font-size: 14px;
+  color: var(--ink-mid);
+  line-height: 1.8;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ── Question groups ── */
+.q-groups {
+  padding: 0 32px;
+}
+.q-group {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.q-group:last-child { border-bottom: none; }
+.group-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.q-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  animation: slideIn 0.25s forwards;
+}
+@keyframes slideIn { to { opacity: 1; transform: none; } }
+
+.q-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--border);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  border: none;
+  appearance: none;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle.on {
+  background: var(--ink);
+}
+.toggle.on::after {
+  transform: translateX(20px);
+}
+
+/* ── Submit ── */
+.submit-area {
+  padding: 32px;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid var(--border-light);
+}
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.progress-track {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin-right: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.3s;
+}
+.progress-count {
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+.btn-submit {
+  width: 100%;
+  padding: 15px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  transition: opacity 0.2s;
+  border-radius: 2px;
+}
+.btn-submit:disabled { opacity: 0.2; cursor: not-allowed; }
+.btn-submit:hover:not(:disabled) { opacity: 0.75; }
+
+/* ── Result ── */
+.result-wrap {
+  padding: 56px 32px 48px;
+  text-align: center;
+}
+.result-orb {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  transition: background 0.6s;
+}
+.result-sublabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  letter-spacing: 0.12em;
+  margin-bottom: 28px;
+  text-transform: uppercase;
+}
+.result-state {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+.result-comment {
+  font-size: 14px;
+  color: var(--ink-mid);
+  font-weight: 500;
+  line-height: 2.2;
+  max-width: 260px;
+  margin: 0 auto 36px;
+}
+.btn-redo {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  background: none;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  transition: all 0.2s;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.btn-redo:hover { background: var(--ink); color: white; }
+
+/* ── Graph panel ── */
+.graph-wrap {
+  padding: 32px;
+}
+.graph-section-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.graph-box {
+  margin-bottom: 40px;
+}
+
+/* 色帯凡例 */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--ink-mid);
+  letter-spacing: 0.06em;
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.history-list { display: flex; flex-direction: column; gap: 1px; }
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.history-orb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.history-date {
+  font-size: 12px;
+  color: var(--ink-mid);
+  flex: 1;
+}
+.history-state {
+  font-size: 11px;
+  color: var(--ink-mid);
+  letter-spacing: 0.04em;
+}
+.history-val {
+  font-size: 12px;
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 200;
+  min-width: 28px;
+  text-align: right;
+}
+
+.empty-state {
+  padding: 64px 32px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-light);
+  line-height: 1.8;
+}
+
+.btn-clear {
+  margin-top: 40px;
+  padding: 8px 16px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-light);
+  border: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+  border-radius: 2px;
+}
+.btn-clear:hover { color: #c05050; border-color: #c05050; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-app">now<span class="header-amp">&</span>here</div>
+    <div class="header-sub">Daily Check</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('check')">Check</button>
+    <button class="tab" onclick="switchTab('graph')">Record</button>
+  </div>
+
+  <!-- CHECK -->
+  <div class="panel active" id="panel-check">
+
+    <div class="orb-section">
+      <div class="orb" id="mainOrb"></div>
+      <div class="orb-label">
+        <div class="orb-state" id="orbState">—</div>
+        <div class="orb-note" id="orbNote">今日はまだ記録がありません</div>
+      </div>
+    </div>
+
+    <div id="checkBody">
+      <div class="intro">今日一日のことをチェックしてみましょう。<br>当てはまるものをオンにしてください。</div>
+      <div class="q-groups" id="qGroups"></div>
+      <div class="submit-area">
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          <div class="progress-count" id="progressCount">準備完了</div>
+        </div>
+        <button class="btn-submit" id="submitBtn" onclick="submitCheck()">記録する</button>
+      </div>
+    </div>
+
+    <div id="resultBody" style="display:none"></div>
+
+  </div>
+
+  <!-- GRAPH -->
+  <div class="panel" id="panel-graph">
+    <div id="graphBody"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ──
+const GROUPS = [
+  {
+    id: 'A',
+    label: 'A',
+    items: [
+      '朝昼晩のメニューを思い出せる',
+      '何をして過ごしたか思い出せる',
+      '誰かと話した内容を思い出せる',
+      'きれいな景色やものを見つけた',
+      'おもしろいことがあった',
+      'ちょっといいことがあった'
+    ]
+  },
+  {
+    id: 'B',
+    label: 'B',
+    items: [
+      'ぼーっと一点を見つめる時間があった',
+      '考えごとにふける時間があった',
+      '人の話が耳に入らないことがあった',
+      'だるい・眠い・重い・疲れてると感じた',
+      'SNSをみる時間が長かった',
+      '手足が冷えている',
+      '寝ても疲れがとれない',
+      '身だしなみに気をつかわなかった'
+    ]
+  },
+  {
+    id: 'C',
+    label: 'C',
+    items: [
+      'ドキドキしたり焦ったりした',
+      'イライラすることがあった',
+      '先のことを考えて不安になった',
+      '熱っぽかった・熱が出た',
+      '暑い・汗をかいた',
+      'タスクに追われている',
+      'お腹が張っている・むくみがある',
+      'なかなか眠れない',
+      '寝落ちした'
+    ]
+  },
+  {
+    id: 'D',
+    label: 'D',
+    items: [
+      '忙しかった・大事な予定があった',
+      '心配事がある・トラブルがあった',
+      '忘れ物をした',
+      'ケガをした・打ち身や傷ができていた',
+      '肌がかゆかった',
+      '食べすぎ・飲みすぎた',
+      '衝動買いをした',
+      'ものを落としたり壊したりした',
+      '下痢や便秘がある'
+    ]
+  }
+];
+
+// 各グループの回答状態 (true/false)
+const state = {
+  A: new Array(6).fill(false),
+  B: new Array(8).fill(false),
+  C: new Array(9).fill(false),
+  D: new Array(9).fill(false)
+};
+
+// ── Score ──
+function calcScores() {
+  const a = state.A.filter(Boolean).length; // 0〜6
+  const b = state.B.filter(Boolean).length; // 0〜8
+  const c = state.C.filter(Boolean).length; // 0〜9
+  const d = state.D.filter(Boolean).length; // 0〜9
+
+  const dFactor = d <= 2 ? 1.0 : d <= 5 ? 1.2 : 1.5;
+  const aFactor = a >= 5 ? 1.0 : a === 4 ? 1.1 : a === 3 ? 1.2 : a === 2 ? 1.3 : a === 1 ? 1.4 : 1.5;
+
+  const adjB = b * dFactor * aFactor;
+  const adjC = c * dFactor * aFactor;
+
+  // 判定値：プラス=高覚醒、マイナス=低覚醒、ゼロ付近=適正
+  const val = adjC - adjB;
+
+  return { a, b, c, d, val };
+}
+
+// 判定値 → 状態名・色
+function getState(val) {
+  if (val > 6)  return { name: '高覚醒', color: 'var(--color-high-3)', level: 3 };
+  if (val > 3)  return { name: 'やや高め', color: 'var(--color-high-2)', level: 2 };
+  if (val > 1)  return { name: 'やや高め', color: 'var(--color-high-1)', level: 1 };
+  if (val >= -1) return { name: '適正', color: 'var(--color-neutral)', level: 0 };
+  if (val >= -3) return { name: 'やや低め', color: 'var(--color-low-1)', level: -1 };
+  if (val >= -6) return { name: 'やや低め', color: 'var(--color-low-2)', level: -2 };
+  return { name: '低覚醒', color: 'var(--color-low-3)', level: -3 };
+}
+
+function getDesc(level) {
+  if (level === 0) return { main: '今ここにいます', sub: 'この調子です\n楽しく過ごしてくださいね' };
+  if (level > 0)   return { main: '心ここにあらずです', sub: 'ゆっくり深呼吸しましょう\n吐く息を意識して' };
+  return            { main: '心ここにあらずです', sub: 'ゆっくり深呼吸しましょう\n新鮮な空気を取り入れて' };
+}
+
+// ── Storage ──
+function todayKey() {
+  const d = new Date();
+  return `nh_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('nh_history') || '[]'); }
+  catch { return []; }
+}
+
+function saveToday(scores) {
+  const history = loadHistory();
+  const d = new Date();
+  const key = todayKey();
+  const entry = {
+    key,
+    dateISO: d.toISOString().slice(0,10),
+    dateLabel: d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+    val: scores.val,
+    a: scores.a, b: scores.b, c: scores.c, d: scores.d
+  };
+  const idx = history.findIndex(e => e.key === key);
+  if (idx >= 0) history[idx] = entry;
+  else history.push(entry);
+  history.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  localStorage.setItem('nh_history', JSON.stringify(history.slice(-90)));
+  localStorage.setItem(key, '1');
+}
+
+function hasDoneToday() {
+  return !!localStorage.getItem(todayKey());
+}
+
+// ── Init ──
+function init() {
+  const d = new Date();
+  document.getElementById('headerDate').textContent =
+    d.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+  updateOrbFromHistory();
+  buildQuestions();
+}
+
+function updateOrbFromHistory() {
+  if (!hasDoneToday()) return;
+  const history = loadHistory();
+  const today = history.find(e => e.key === todayKey());
+  if (!today) return;
+  const s = getState(today.val);
+  document.getElementById('mainOrb').style.background = s.color;
+  document.getElementById('orbState').textContent = s.name;
+  document.getElementById('orbNote').textContent = getDesc(s.level).main;
+}
+
+// ── Build questions ──
+function buildQuestions() {
+  if (hasDoneToday()) {
+    document.getElementById('checkBody').style.display = 'none';
+    document.getElementById('resultBody').style.display = 'block';
+    const history = loadHistory();
+    const today = history.find(e => e.key === todayKey());
+    renderResult(today || { val: 0, a:0, b:0, c:0, d:0 }, true);
+    return;
+  }
+
+  const container = document.getElementById('qGroups');
+  container.innerHTML = '';
+  let delay = 0;
+
+  GROUPS.forEach(group => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'q-group';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'group-label';
+    lbl.textContent = `Group ${group.id}`;
+    groupDiv.appendChild(lbl);
+
+    group.items.forEach((text, i) => {
+      const item = document.createElement('div');
+      item.className = 'q-item';
+      item.style.animationDelay = `${delay * 0.04}s`;
+      delay++;
+
+      const t = document.createElement('div');
+      t.className = 'q-text';
+      t.textContent = text;
+
+      const btn = document.createElement('button');
+      btn.className = 'toggle';
+      btn.setAttribute('aria-label', text);
+      btn.addEventListener('click', () => {
+        state[group.id][i] = !state[group.id][i];
+        btn.classList.toggle('on', state[group.id][i]);
+        updateProgress();
+        updateOrbLive();
+      });
+
+      item.appendChild(t);
+      item.appendChild(btn);
+      groupDiv.appendChild(item);
+    });
+
+    container.appendChild(groupDiv);
+  });
+
+  // submitは全問答えなくても可（トグルはYes/No選択完了なので常に有効）
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('progressCount').textContent = '準備完了';
+}
+
+function updateProgress() {
+  const total = GROUPS.reduce((s, g) => s + g.items.length, 0);
+  const checked = Object.values(state).flat().filter(Boolean).length;
+  const pct = (checked / total) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = `${checked} on`;
+}
+
+function updateOrbLive() {
+  const scores = calcScores();
+  const s = getState(scores.val);
+  document.getElementById('mainOrb').style.background = s.color;
+  document.getElementById('orbState').textContent = s.name;
+  document.getElementById('orbNote').textContent = getDesc(s.level).main + '（プレビュー）';
+}
+
+// ── Submit ──
+function submitCheck() {
+  const scores = calcScores();
+  saveToday(scores);
+  document.getElementById('checkBody').style.display = 'none';
+  document.getElementById('resultBody').style.display = 'block';
+  renderResult(scores, false);
+  updateOrbFromHistory();
+}
+
+function renderResult(scores, already) {
+  const s = getState(scores.val);
+  const area = document.getElementById('resultBody');
+  const desc = getDesc(s.level);
+  const subHtml = desc.sub
+    ? desc.sub.split('\n').map(l => `<span>${l}</span>`).join('<br>')
+    : '';
+
+  // サブラベル（やや低め、やや高め、など）— 適正のときは非表示
+  const subLabel = s.level !== 0 ? `<div class="result-sublabel">${s.name}</div>` : '<div style="height:28px"></div>';
+  const alreadyNote = already ? `<p style="font-size:11px;color:var(--ink-light);letter-spacing:0.1em;margin-bottom:20px;text-transform:uppercase">記録済み — 本日2回目</p>` : '';
+
+  area.innerHTML = `
+    <div class="result-wrap">
+      <div class="result-orb" style="background:${s.color}"></div>
+      ${subLabel}
+      <div class="result-state">${desc.main}</div>
+      ${subHtml ? `<div class="result-comment">${subHtml}</div>` : '<div style="margin-bottom:36px"></div>'}
+      ${alreadyNote}
+      <button class="btn-redo" onclick="redoToday()">もう一度やる</button>
+    </div>
+  `;
+}
+
+function redoToday() {
+  localStorage.removeItem(todayKey());
+  Object.keys(state).forEach(k => state[k].fill(false));
+  document.getElementById('resultBody').style.display = 'none';
+  document.getElementById('checkBody').style.display = 'block';
+  document.getElementById('mainOrb').style.background = 'var(--border)';
+  document.getElementById('orbState').textContent = '—';
+  document.getElementById('orbNote').textContent = '今日はまだ記録がありません';
+  buildQuestions();
+}
+
+// ── Graph ──
+function renderGraph() {
+  const history = loadHistory();
+  const body = document.getElementById('graphBody');
+
+  if (history.length === 0) {
+    body.innerHTML = `<div class="empty-state">まだ記録がありません。<br>Check タブから記録を始めてください。</div>`;
+    return;
+  }
+
+  const recent = history.slice(-30);
+
+  // SVG graph
+  const W = 416, H = 180;
+  const pad = { top: 24, right: 16, bottom: 32, left: 32 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  const MIN_VAL = -9, MAX_VAL = 9;
+  const toY = v => pad.top + (1 - (v - MIN_VAL) / (MAX_VAL - MIN_VAL)) * ph;
+
+  // X軸を日付ベースで計算（30日分の幅に対して実際の日付位置を使う）
+  const parseDate = iso => new Date(iso);
+  const firstDate = parseDate(recent[0].dateISO);
+  const lastDate  = parseDate(recent[recent.length - 1].dateISO);
+  const spanDays  = Math.max((lastDate - firstDate) / 86400000, 1);
+  const toX = iso => pad.left + ((parseDate(iso) - firstDate) / 86400000 / spanDays) * pw;
+
+  const xs = recent.map(e => toX(e.dateISO));
+  const ys = recent.map(e => toY(Math.max(MIN_VAL, Math.min(MAX_VAL, e.val))));
+
+  const neutralY = toY(0);
+
+  // 連続チェック：前のデータと1日以上空いていたらMで新しいセグメント開始
+  const isConsecutive = (a, b) => {
+    const diff = (parseDate(b.dateISO) - parseDate(a.dateISO)) / 86400000;
+    return diff <= 1;
+  };
+
+  let pathD = '';
+  recent.forEach((e, i) => {
+    if (i === 0 || !isConsecutive(recent[i - 1], e)) {
+      pathD += `M ${xs[i]} ${ys[i]} `;
+    } else {
+      pathD += `L ${xs[i]} ${ys[i]} `;
+    }
+  });
+
+  // areaはセグメントごとに作る（線が切れる部分でfillも切る）
+  let areaD = '';
+  let segStart = 0;
+  for (let i = 1; i <= recent.length; i++) {
+    const isEnd = i === recent.length || !isConsecutive(recent[i - 1], recent[i]);
+    if (isEnd) {
+      const segXs = recent.slice(segStart, i).map((_, j) => xs[segStart + j]);
+      const segYs = recent.slice(segStart, i).map((_, j) => ys[segStart + j]);
+      if (segXs.length >= 2) {
+        let seg = `M ${segXs[0]} ${segYs[0]} `;
+        segXs.slice(1).forEach((x, j) => { seg += `L ${x} ${segYs[j + 1]} `; });
+        seg += `L ${segXs[segXs.length-1]} ${neutralY} L ${segXs[0]} ${neutralY} Z`;
+        areaD += seg;
+      }
+      segStart = i;
+    }
+  }
+
+  // grid
+  const gridY = [MIN_VAL, 0, MAX_VAL].map(v => {
+    const y = toY(v);
+    return `<line x1="${pad.left}" y1="${y}" x2="${pad.left+pw}" y2="${y}" stroke="#e8e8e4" stroke-width="1"/>`;
+  }).join('');
+
+  // y labels
+  const yLbls = [
+    { v: MAX_VAL, t: '高' },
+    { v: 0,       t: '適' },
+    { v: MIN_VAL, t: '低' }
+  ].map(({ v, t }) =>
+    `<text x="${pad.left-8}" y="${toY(v)+4}" text-anchor="end" font-size="9" fill="#b0b0b0" font-family="'Outfit'">${t}</text>`
+  ).join('');
+
+  // x labels
+  const step = Math.max(1, Math.floor(recent.length / 5));
+  const xLbls = recent.map((e, i) => {
+    if (i % step !== 0 && i !== recent.length - 1) return '';
+    const parts = e.dateLabel.split('/');
+    const short = parts[parts.length - 1] || e.dateLabel;
+    return `<text x="${xs[i]}" y="${pad.top+ph+18}" text-anchor="middle" font-size="9" fill="#b0b0b0" font-family="'Outfit'">${short}</text>`;
+  }).join('');
+
+  // dots
+  const dots = recent.map((e, i) => {
+    const s = getState(e.val);
+    return `<circle cx="${xs[i]}" cy="${ys[i]}" r="4.5" fill="${s.color}" stroke="white" stroke-width="1.5"/>`;
+  }).join('');
+
+  const svg = `
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+      <defs>
+        <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6bbf9e" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#6bbf9e" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${gridY}
+      ${yLbls}
+      ${xLbls}
+      <path d="${areaD}" fill="url(#ag)"/>
+      <path d="${pathD}" fill="none" stroke="#aaaaaa" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>
+  `;
+
+  // legend
+  const legendItems = [
+    { color: 'var(--color-low-2)', label: 'やや低め' },
+    { color: 'var(--color-neutral)', label: '今ここ' },
+    { color: 'var(--color-high-1)', label: 'やや高め' },
+  ].map(l => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${l.color}"></div>
+      ${l.label}
+    </div>
+  `).join('');
+
+  // history rows (recent 10)
+  const rows = history.slice(-10).reverse().map(e => {
+    const s = getState(e.val);
+    return `
+      <div class="history-row">
+        <div class="history-orb" style="background:${s.color}"></div>
+        <div class="history-date">${e.dateLabel}</div>
+        <div class="history-state">${s.name}</div>
+        <div class="history-val">${e.val > 0 ? '+' : ''}${e.val.toFixed(1)}</div>
+      </div>
+    `;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="graph-wrap">
+      <div class="graph-section-title">推移 — 直近30日</div>
+      <div class="graph-box">
+        ${svg}
+        <div class="legend" style="margin-top:12px">${legendItems}</div>
+      </div>
+
+      <div class="graph-section-title">履歴</div>
+      <div class="history-list">${rows}</div>
+
+      <div style="text-align:center">
+        <button class="btn-clear" onclick="clearAll()">すべての記録を削除</button>
+      </div>
+    </div>
+  `;
+}
+
+function clearAll() {
+  if (confirm('すべての記録を削除しますか？この操作は取り消せません。')) {
+    localStorage.clear();
+    renderGraph();
+    document.getElementById('mainOrb').style.background = 'var(--border)';
+    document.getElementById('orbState').textContent = '—';
+    document.getElementById('orbNote').textContent = '今日はまだ記録がありません';
+  }
+}
+
+// ── Tabs ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['check','graph'][i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  if (name === 'graph') renderGraph();
+}
+
+init();
+</script>
+</body>
+</html>
