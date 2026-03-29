@@ -572,7 +572,7 @@ function saveToday(scores) {
   if (idx >= 0) history[idx] = entry;
   else history.push(entry);
   history.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-  localStorage.setItem('nh_history', JSON.stringify(history.slice(-90)));
+  localStorage.setItem('nh_history', JSON.stringify(history.slice(-1095)));
   localStorage.setItem(key, '1');
 }
 
