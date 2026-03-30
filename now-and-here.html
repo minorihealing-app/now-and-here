@@ -461,23 +461,28 @@ html, body {
 const GROUPS = [
   {
     id: 'A',
-    label: 'A',
     items: [
       '朝昼晩のメニューを思い出せる',
       '何をして過ごしたか思い出せる',
-      '誰かと話した内容を思い出せる',
+      '人と話した内容を思い出せる',
       'きれいな景色やものを見つけた',
-      'おもしろいことがあった',
-      'ちょっといいことがあった'
+      '気持ちいいこと、爽快感があった',
+      'ちょっと笑えることがあった'
+    ]
+  },
+  {
+    id: 'AP',
+    items: [
+      'ちょっといいことがあった',
+      'あまり良くないことがあった'
     ]
   },
   {
     id: 'B',
-    label: 'B',
     items: [
       'ぼーっと一点を見つめる時間があった',
       '考えごとにふける時間があった',
-      '人の話が耳に入らないことがあった',
+      '人の話を聞いてないことがあった',
       'だるい・眠い・重い・疲れてると感じた',
       'SNSをみる時間が長かった',
       '手足が冷えている',
@@ -487,31 +492,25 @@ const GROUPS = [
   },
   {
     id: 'C',
-    label: 'C',
     items: [
-      'ドキドキしたり焦ったりした',
-      'イライラすることがあった',
-      '先のことを考えて不安になった',
-      '熱っぽかった・熱が出た',
-      '暑い・汗をかいた',
-      'タスクに追われている',
+      'イライラしたり焦ったりした',
+      '先のことを考えると不安になる',
+      '社会情勢や政治経済が気になる',
+      '熱っぽかった・熱が出た・汗をかく',
       'お腹が張っている・むくみがある',
-      'なかなか眠れない',
-      '寝落ちした'
+      '寝つきが悪い・寝落ちした',
+      '肩や首、表情筋がこわばっている'
     ]
   },
   {
     id: 'D',
-    label: 'D',
     items: [
       '忙しかった・大事な予定があった',
-      '心配事がある・トラブルがあった',
-      '忘れ物をした',
+      'トラブルがあった・心配ごとがある',
+      '忘れ物・失くし物、物を壊した',
       'ケガをした・打ち身や傷ができていた',
-      '肌がかゆかった',
-      '食べすぎ・飲みすぎた',
-      '衝動買いをした',
-      'ものを落としたり壊したりした',
+      '肌がかゆかった・肌が乾燥する',
+      '食べすぎ・飲みすぎ・衝動買いをした',
       '下痢や便秘がある'
     ]
   }
@@ -519,35 +518,39 @@ const GROUPS = [
 
 // 各グループの回答状態 (true/false)
 const state = {
-  A: new Array(6).fill(false),
-  B: new Array(8).fill(false),
-  C: new Array(9).fill(false),
-  D: new Array(9).fill(false)
+  A:  new Array(6).fill(false),
+  AP: new Array(2).fill(false),
+  B:  new Array(8).fill(false),
+  C:  new Array(7).fill(false),
+  D:  new Array(7).fill(false)
 };
 
 // ── Score ──
 function calcScores() {
-  const a = state.A.filter(Boolean).length; // 0〜6
-  const b = state.B.filter(Boolean).length; // 0〜8
-  const c = state.C.filter(Boolean).length; // 0〜9
-  const d = state.D.filter(Boolean).length; // 0〜9
+  const a  = state.A.filter(Boolean).length;  // 0〜6
+  const ap = state.AP.filter(Boolean).length; // 0〜2
+  const b  = state.B.filter(Boolean).length;  // 0〜8
+  const c  = state.C.filter(Boolean).length;  // 0〜7
+  const d  = state.D.filter(Boolean).length;  // 0〜7
 
-  const dFactor = d <= 2 ? 1.0 : d <= 5 ? 1.2 : 1.5;
+  const dFactor = d <= 2 ? 1.0 : d <= 4 ? 1.2 : 1.5;
   const aFactor = a >= 5 ? 1.0 : a === 4 ? 1.1 : a === 3 ? 1.2 : a === 2 ? 1.3 : a === 1 ? 1.4 : 1.5;
 
   const adjB = b * dFactor * aFactor;
   const adjC = c * dFactor * aFactor;
 
-  // 判定値：プラス=高覚醒、マイナス=低覚醒、ゼロ付近=適正
   const val = adjC - adjB;
 
-  return { a, b, c, d, val };
+  return { a, ap, b, c, d, val };
 }
 
 // 判定値 → 状態名・色
 function getState(scores) {
-  const { val, d } = scores;
-  if (d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
+  const { val, a, ap, b, c, d } = scores;
+  // A'2問両方オン → 適正を優先
+  if (ap === 2) return { name: '適正', color: 'var(--color-neutral)', level: 0 };
+  // グレー判定
+  if (a <= 3 && (b + c) <= 2 && d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
   if (val > 6)   return { name: '高覚醒',  color: 'var(--color-high-3)', level: 3 };
   if (val > 3)   return { name: 'やや高め', color: 'var(--color-high-2)', level: 2 };
   if (val > 1)   return { name: 'やや高め', color: 'var(--color-high-1)', level: 1 };
@@ -634,42 +637,48 @@ function buildQuestions() {
   container.innerHTML = '';
   let delay = 0;
 
+  // 全質問をフラットにしてランダムシャッフル（内部IDは維持）
+  const allItems = [];
   GROUPS.forEach(group => {
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'q-group';
-
-    const lbl = document.createElement('div');
-    lbl.className = 'group-label';
-    lbl.textContent = `Group ${group.id}`;
-    groupDiv.appendChild(lbl);
-
     group.items.forEach((text, i) => {
-      const item = document.createElement('div');
-      item.className = 'q-item';
-      item.style.animationDelay = `${delay * 0.04}s`;
-      delay++;
+      allItems.push({ groupId: group.id, index: i, text });
+    });
+  });
+  // Fisher-Yatesシャッフル
+  for (let i = allItems.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+  }
 
-      const t = document.createElement('div');
-      t.className = 'q-text';
-      t.textContent = text;
+  const singleGroup = document.createElement('div');
+  singleGroup.className = 'q-group';
 
-      const btn = document.createElement('button');
-      btn.className = 'toggle';
-      btn.setAttribute('aria-label', text);
-      btn.addEventListener('click', () => {
-        state[group.id][i] = !state[group.id][i];
-        btn.classList.toggle('on', state[group.id][i]);
-        updateProgress();
-        updateOrbLive();
-      });
+  allItems.forEach(({ groupId, index, text }) => {
+    const item = document.createElement('div');
+    item.className = 'q-item';
+    item.style.animationDelay = `${delay * 0.04}s`;
+    delay++;
 
-      item.appendChild(t);
-      item.appendChild(btn);
-      groupDiv.appendChild(item);
+    const t = document.createElement('div');
+    t.className = 'q-text';
+    t.textContent = text;
+
+    const btn = document.createElement('button');
+    btn.className = 'toggle';
+    btn.setAttribute('aria-label', text);
+    btn.addEventListener('click', () => {
+      state[groupId][index] = !state[groupId][index];
+      btn.classList.toggle('on', state[groupId][index]);
+      updateProgress();
+      updateOrbLive();
     });
 
-    container.appendChild(groupDiv);
+    item.appendChild(t);
+    item.appendChild(btn);
+    singleGroup.appendChild(item);
   });
+
+  container.appendChild(singleGroup);
 
   // submitは全問答えなくても可（トグルはYes/No選択完了なので常に有効）
   document.getElementById('submitBtn').disabled = false;
