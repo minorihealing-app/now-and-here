@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>now&here for Mom</title>
-<link rel="icon" href="NHicon.png">
-<link rel="apple-touch-icon" href="NHicon.png">
+<link rel="icon" href="NHiconmom.png">
+<link rel="apple-touch-icon" href="NHiconmom.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="for Mom">
@@ -402,34 +402,40 @@ html, body {
 const GROUPS = [
   {
     id: 'A',
-    label: 'A',
     items: [
       '学校のことなどを自分から話す',
       'エピソードや予定を覚えている',
       'ごはんの感想を言う',
       'よく笑う',
       'よく目が合う',
-      '質問をしてきた',
-      'おもしろいことを共有してきた'
+      '質問をしてくる',
+      'おもしろいことを共有する'
+    ]
+  },
+  {
+    id: 'AP',
+    items: [
+      'ありがとうと言う',
+      'わがままや要求がある'
     ]
   },
   {
     id: 'B',
-    label: 'B',
     items: [
       'ぼーっと一点を見る時間がある',
       '声をかけても返事がない',
       '眠そうにしている',
       '抜毛や爪噛みがある',
-      '身だしなみに気を使わない'
+      '身だしなみに気を使わない',
+      'うつろで視線が定まらない'
     ]
   },
   {
     id: 'C',
-    label: 'C',
     items: [
       '音を立てる',
       '暴言がある',
+      '暴力をふるう',
       '落ち着きがない',
       '貧乏ゆすりをしている',
       '暴飲暴食がある'
@@ -437,14 +443,13 @@ const GROUPS = [
   },
   {
     id: 'D',
-    label: 'D',
     items: [
       'テストや発表など大事な行事があった',
-      '体調が悪そうだった・発熱があった',
+      '体調が悪そう・発熱があった',
       '友達とトラブルがあった',
       '睡眠が短かった・夜更かしした',
-      'いつもより食欲がなかった',
-      '忘れ物をする',
+      'いつもより食欲がない',
+      '忘れ物・落とし物・失くし物',
       'ケガをする',
       '知らないうちに打ち身がある',
       '物を壊した・服が破れた'
@@ -453,17 +458,19 @@ const GROUPS = [
 ];
 
 const state = {
-  A: new Array(7).fill(false),
-  B: new Array(5).fill(false),
-  C: new Array(5).fill(false),
-  D: new Array(9).fill(false)
+  A:  new Array(7).fill(false),
+  AP: new Array(2).fill(false),
+  B:  new Array(6).fill(false),
+  C:  new Array(6).fill(false),
+  D:  new Array(9).fill(false)
 };
 
 function calcScores() {
-  const a = state.A.filter(Boolean).length; // 0〜7
-  const b = state.B.filter(Boolean).length; // 0〜5
-  const c = state.C.filter(Boolean).length; // 0〜5
-  const d = state.D.filter(Boolean).length; // 0〜9
+  const a  = state.A.filter(Boolean).length;  // 0〜7
+  const ap = state.AP.filter(Boolean).length; // 0〜2
+  const b  = state.B.filter(Boolean).length;  // 0〜6
+  const c  = state.C.filter(Boolean).length;  // 0〜6
+  const d  = state.D.filter(Boolean).length;  // 0〜9
 
   const dFactor = d <= 1 ? 1.0 : d <= 4 ? 1.2 : 1.5;
   const aFactor = a >= 6 ? 1.0 : a >= 4 ? 1.1 : a === 3 ? 1.2 : a === 2 ? 1.3 : a === 1 ? 1.4 : 1.5;
@@ -472,12 +479,15 @@ function calcScores() {
   const adjC = c * dFactor * aFactor;
 
   const val = adjC - adjB;
-  return { a, b, c, d, val };
+  return { a, ap, b, c, d, val };
 }
 
 function getState(scores) {
-  const { val, d } = scores;
-  if (d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
+  const { val, a, ap, b, c, d } = scores;
+  // A'2問両方オン → 適正優先
+  if (ap === 2) return { name: '今ここ', color: 'var(--color-neutral)', level: 0 };
+  // グレー判定
+  if (a <= 3 && (b + c) <= 2 && d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
   if (val > 4)   return { name: 'やや高め', color: 'var(--color-high-1)', level: 1 };
   if (val >= -1) return { name: '今ここ',   color: 'var(--color-neutral)', level: 0 };
   return               { name: 'やや低め', color: 'var(--color-low-2)',   level: -1 };
@@ -521,7 +531,7 @@ function saveToday(scores) {
     dateISO: d.toISOString().slice(0,10),
     dateLabel: d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' }),
     val: scores.val,
-    a: scores.a, b: scores.b, c: scores.c, d: scores.d
+    a: scores.a, ap: scores.ap, b: scores.b, c: scores.c, d: scores.d
   };
   const idx = history.findIndex(e => e.key === key);
   if (idx >= 0) history[idx] = entry;
@@ -556,36 +566,42 @@ function buildQuestions() {
   container.innerHTML = '';
   let delay = 0;
 
+  const allItems = [];
   GROUPS.forEach(group => {
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'q-group';
-    const lbl = document.createElement('div');
-    lbl.className = 'group-label';
-    lbl.textContent = `Group ${group.id}`;
-    groupDiv.appendChild(lbl);
-
     group.items.forEach((text, i) => {
-      const item = document.createElement('div');
-      item.className = 'q-item';
-      item.style.animationDelay = `${delay * 0.04}s`;
-      delay++;
-      const t = document.createElement('div');
-      t.className = 'q-text';
-      t.textContent = text;
-      const btn = document.createElement('button');
-      btn.className = 'toggle';
-      btn.setAttribute('aria-label', text);
-      btn.addEventListener('click', () => {
-        state[group.id][i] = !state[group.id][i];
-        btn.classList.toggle('on', state[group.id][i]);
-        updateProgress();
-      });
-      item.appendChild(t);
-      item.appendChild(btn);
-      groupDiv.appendChild(item);
+      allItems.push({ groupId: group.id, index: i, text });
     });
-    container.appendChild(groupDiv);
   });
+  for (let i = allItems.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+  }
+
+  const singleGroup = document.createElement('div');
+  singleGroup.className = 'q-group';
+
+  allItems.forEach(({ groupId, index, text }) => {
+    const item = document.createElement('div');
+    item.className = 'q-item';
+    item.style.animationDelay = `${delay * 0.04}s`;
+    delay++;
+    const t = document.createElement('div');
+    t.className = 'q-text';
+    t.textContent = text;
+    const btn = document.createElement('button');
+    btn.className = 'toggle';
+    btn.setAttribute('aria-label', text);
+    btn.addEventListener('click', () => {
+      state[groupId][index] = !state[groupId][index];
+      btn.classList.toggle('on', state[groupId][index]);
+      updateProgress();
+    });
+    item.appendChild(t);
+    item.appendChild(btn);
+    singleGroup.appendChild(item);
+  });
+
+  container.appendChild(singleGroup);
 
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('progressCount').textContent = '準備完了';
