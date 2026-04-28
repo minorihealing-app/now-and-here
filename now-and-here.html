@@ -547,8 +547,8 @@ function calcScores() {
 // 判定値 → 状態名・色
 function getState(scores) {
   const { val, a, ap, b, c, d } = scores;
-  // A'2問両方オン → 適正を優先
-  if (ap === 2) return { name: '適正', color: 'var(--color-neutral)', level: 0 };
+  // A'2問両方オン → 部分的に今ここ
+  if (ap === 2) return { name: '部分的に今ここ', color: 'var(--color-neutral)', level: 98 };
   // グレー判定
   if (a <= 3 && (b + c) <= 2 && d >= 3) return { name: 'グレー', color: '#808080', level: 99 };
   if (val > 6)   return { name: '高覚醒',  color: 'var(--color-high-3)', level: 3 };
@@ -561,6 +561,7 @@ function getState(scores) {
 }
 
 function getDesc(level) {
+  if (level === 98) return { main: '部分的に今ここ', sub: '少し今ここを離れています\n手をギュッと握り深呼吸を' };
   if (level === 99) return { main: 'いるようでいないかも', sub: '自動的にこなしているかも\n深呼吸して休息をとって' };
   if (level === 0)  return { main: '今ここにいます', sub: 'この調子です\n楽しく過ごしてくださいね' };
   if (level > 0)    return { main: '心ここにあらずです', sub: 'ゆっくり深呼吸しましょう\n吐く息を意識して' };
@@ -719,13 +720,22 @@ function renderResult(scores, already) {
     ? desc.sub.split('\n').map(l => `<span>${l}</span>`).join('<br>')
     : '';
 
-  // サブラベル — 適正(0)とグレー(99)は非表示
-  const subLabel = (s.level !== 0 && s.level !== 99) ? `<div class="result-sublabel">${s.name}</div>` : '<div style="height:28px"></div>';
+  // サブラベル — 適正(0)・グレー(99)・部分(98)は非表示
+  const subLabel = (s.level !== 0 && s.level !== 99 && s.level !== 98) ? `<div class="result-sublabel">${s.name}</div>` : '<div style="height:28px"></div>';
   const alreadyNote = already ? `<p style="font-size:11px;color:var(--ink-light);letter-spacing:0.1em;margin-bottom:20px;text-transform:uppercase">記録済み — 本日2回目</p>` : '';
+
+  // 3/4円SVG（level:98のとき）
+  const orbHtml = s.level === 98
+    ? `<svg width="220" height="220" viewBox="0 0 220 220" style="display:block;margin:0 auto 20px">
+        <path d="M110,110 L110,5 A105,105 0 0,1 215,110 A105,105 0 0,1 110,215 A105,105 0 0,1 5,110 A105,105 0 0,1 110,5 Z" fill="none"/>
+        <path d="M110,110 L110,5 A105,105 0 0,1 215,110 A105,105 0 0,1 110,215 A105,105 0 0,1 5,110 A105,105 0 0,1 110,5" fill="${s.color}"/>
+        <path d="M110,110 L215,110 L215,215 L110,215 Z" fill="white"/>
+      </svg>`
+    : `<div class="result-orb" style="background:${s.color}"></div>`;
 
   area.innerHTML = `
     <div class="result-wrap">
-      <div class="result-orb" style="background:${s.color}"></div>
+      ${orbHtml}
       ${subLabel}
       <div class="result-state">${desc.main}</div>
       ${subHtml ? `<div class="result-comment">${subHtml}</div>` : '<div style="margin-bottom:36px"></div>'}
